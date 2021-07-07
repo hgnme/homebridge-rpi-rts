@@ -165,7 +165,7 @@ class SomfyRtsWindowCoveringAccessory {
 		
 		// Call moveCovering function
 		this.CoveringTargetPosition = value;
-		moveCovering();
+		this.moveCovering();
   }
 
 	SyncroniseStateGet() {
@@ -174,7 +174,7 @@ class SomfyRtsWindowCoveringAccessory {
 	SyncroniseStateSet(value) {
 		if(value === true) {
 			this.log.debug('Beginning syncronise process. Moving to full open');
-			syncroniseCovering();
+			this.syncroniseCovering();
 		}
 		this.isSyncing = value;
 	}
