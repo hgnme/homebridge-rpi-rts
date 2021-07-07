@@ -83,7 +83,7 @@ class SomfyRtsWindowCoveringAccessory {
 		const positionCurrent = this.CoveringPosition;
 		const positionTarget = this.CoveringTargetPosition;
 		const covering = this.SomfyServices.windowCovering;
-		const direction = this.CoveringPosition > value ? 'Down' : 'Up';
+		const direction = this.CoveringPosition > this.CoveringTargetPosition ? 'Down' : 'Up';
 
 		const timeToMove = this.CalcOperationLength(positionTarget);
 
@@ -106,7 +106,7 @@ class SomfyRtsWindowCoveringAccessory {
 				this.log.debug(`--> Arrived at destination`);
 				this.log.debug(`--> Presing My`);
 				this.emitter.sendCommand('My');
-				this.CoveringPosition = value;
+				this.CoveringPosition = this.CoveringTargetPosition;
 				const covering = this.SomfyServices.windowCovering;
 				covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
 				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);		
@@ -124,7 +124,18 @@ class SomfyRtsWindowCoveringAccessory {
 		this.emitter.sendCommand('Up');
 		
 		const covering = this.SomfyServices.windowCovering;
-		covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
+		// Set blind to 0% and stopped to begin
+		covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
+		covering.updateCharacteristic(Characteristic.CurrentPosition, 0);
+		setTimeout(
+			// Set blind to rising, 100% target 500ms later
+			function() {
+				const covering = this.SomfyServices.windowCovering;
+				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
+				covering.updateCharacteristic(Characteristic.CoveringTargetPosition, this.CoveringTargetPosition);
+			}.bind(this),
+			500
+		);
 
 		this.log.debug(`--> Waiting ${this.config.timeToOpen} ms`);
 		setTimeout(
