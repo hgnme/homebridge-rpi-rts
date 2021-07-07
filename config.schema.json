@@ -1,5 +1,5 @@
 {
-	"pluginAlias": "Somfy RTS Window Covering",
+	"pluginAlias": "Somfy RTS Remote Window Covering",
 	"pluginType": "accessory",
 	"singular": false,
 	"schema": {
