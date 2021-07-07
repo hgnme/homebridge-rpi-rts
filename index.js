@@ -91,7 +91,26 @@ class SomfyRtsWindowCoveringAccessory {
 		const distanceToMove = this.CalcOperationLength(value);
 		this.log.debug('distance to move (ms): ' + distanceToMove);
 		this.CoveringTargetPosition = value;
-		this.CoveringPosition = value;
+		covering.updateCharacteristic(Characteristic.TargetPosition, this.CoveringTargetPosition);
+		if(this.CoveringPosition < value) {
+			// going down
+			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.DECREASING);
+			this.emitter.sendCommand('Down');
+		} else {
+			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
+			this.emitter.sendCommand('Up');
+
+		}
+		setTimeout(
+			function() {
+				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
+				this.emitter.sendCommand('My');
+				this.log.debug('move complete');
+				this.CoveringPosition = value;
+				covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);				
+			}.bind(this), 
+			distanceToMove
+		);
   }
 
 	SyncroniseStateGet() {
@@ -102,17 +121,25 @@ class SomfyRtsWindowCoveringAccessory {
     this.log.debug('Syncronise button set: ' + value);
 		if(value === true) {
 			this.log.debug('Average time:' + this.config.timeToOpen);
-			this.CoveringTargetPosition = 0;
+
+			this.CoveringTargetPosition = 1;
+
 			this.CoveringMoving = true;
 			this.emitter.sendCommand('Up');
+			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
 			setTimeout(
-				function(button) {
+				function() {
 					this.hasSynced = true;
 					this.CoveringMoving = false;
 					this.CoveringPosition = this.CoveringTargetPosition;
 					this.isSyncing = false;
-					button.setCharacteristic(Characteristic.On, false);
-				}.bind(this, this.SomfyServices.syncButton), 
+
+					this.SomfyServices.syncButton.setCharacteristic(Characteristic.On, false);
+
+					const covering = this.SomfyServices.windowCovering;
+					covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
+					covering.updateCharacteristic(Characteristic.PositionState.STOPPED);
+				}.bind(this), 
 				this.config.timeToOpen
 			);
 		}
