@@ -1,17 +1,5 @@
 const RpiGpioRts = require('./RpiGpioRts').default;
 // let Service, Characteristic;
-import {
-  AccessoryPlugin,
-  CharacteristicGetCallback,
-  CharacteristicSetCallback,
-  CharacteristicValue,
-	Characteristic,
-  HAP,
-  Logging,
-  Service,
-  CharacteristicEventTypes,
-  AccessoryConfig
-} from "homebridge";
 
 module.exports = homebridge => {
 	Service = homebridge.hap.Service;
