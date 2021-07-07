@@ -74,16 +74,17 @@ class SomfyRtsWindowCoveringAccessory {
 	/* returns the time in ms to move the blind */
 	CalcOperationLength(targetPosition) {
 		let distanceToMove;
-		if(targetPosition < this.CoveringPosition) {
-			// current 70, target 50, move = 20
-			// 20 = 70 - 50
-			distanceToMove = this.CoveringPosition - targetPosition;
-		} else {
-			// 70 current, target 90, move = 20
-			// 20 = target - current
+		// 27 curr --> 50 destination --> goign up --> 23
+		if(this.CoveringPosition < targetPosition) {
+			// Going up
 			distanceToMove = targetPosition - this.CoveringPosition;
+			return (distanceToMove / 100) * this.config.timeToOpen;
+		} else {
+			// 50 curr -> 27 destination --> going down --> 23
+			// going down
+			distanceToMove = this.CoveringPosition - targetPosition;
+			return (distanceToMove / 100) * this.config.timeToClose;
 		}
-		return (distanceToMove / 100) * this.config.timeToOpen;
 	}
   /**
 	 * Sets the blind position
@@ -134,8 +135,7 @@ class SomfyRtsWindowCoveringAccessory {
 	SyncroniseStateSet(value) {
     this.log.debug('Syncronise btn set: ' + value);
 		if(value === true) {
-			this.log.debug('Average time:' + this.config.timeToOpen);
-
+			this.log.debug('Beginning syncronise process');
 			this.CoveringTargetPosition = 100;
 
 			this.CoveringMoving = true;

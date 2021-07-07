@@ -22,8 +22,17 @@
 				"maximum": 16777216
 			},
 			"timeToOpen": {
-				"title": "Average time to open",
-				"description": "Average time to open/close the covering, fully (in ms)",
+				"title": "Average time to rise",
+				"description": "Average time to open the covering, fully (in ms)",
+				"type": "integer",
+				"default": 1000,
+				"required": true,
+				"minimum": 0,
+				"maximum": 60000
+			},
+			"timeToClose": {
+				"title": "Average time to close",
+				"description": "Average time to close the covering, fully (in ms)",
 				"type": "integer",
 				"default": 1000,
 				"required": true,
