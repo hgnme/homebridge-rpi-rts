@@ -71,18 +71,22 @@ class SomfyRtsWindowCoveringAccessory {
     return currentValue;
   }
 	SyncroniseStateSet(value) {
-    this.log.debug('Syncronise triggered: ' + value);
-    this.log.debug('Average time:' + this.config.timeToOpen);
-		setTimeout(function() {
-			this.setCharacteristic(Characteristic.On, false);
-		}.bind(this), this.config.timeToOpen);
+    this.log.debug('Syncronise button set: ' + value);
+		if(value === true) {
+			this.log.debug('Average time:' + this.config.timeToOpen);
+			setTimeout(
+				function(button) {
+					this.isSyncing = false;
+					button.setCharacteristic(Characteristic.On, false);
+				}.bind(this, this.SomfyServices.syncButton), 
+				this.config.timeToOpen
+			);
+		}
 		this.isSyncing = value;
-		
 	}
 	SyncroniseStateGet() {
     this.log.debug('Syncronise state requested');
     return this.isSyncing;
-		
 	}
   /**
    * Handle requests to set the "Target Position" characteristic
