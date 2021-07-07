@@ -25,8 +25,8 @@ class SomfyRtsWindowCoveringAccessory {
 		this.emitter = new RpiGpioRts(log, config);
 
 		this.hasSynced = false;
-		this.CoveringPosition = 1;
-		this.CoveringTargetPosition = 1;
+		this.CoveringPosition = 100;
+		this.CoveringTargetPosition = 100;
 		this.CoveringMoving = false;
 		
 		this.SomfyServices = {
@@ -98,7 +98,7 @@ class SomfyRtsWindowCoveringAccessory {
 		this.CoveringTargetPosition = value;
 		const covering = this.SomfyServices.windowCovering;
 		covering.updateCharacteristic(Characteristic.TargetPosition, this.CoveringTargetPosition);
-		if(this.CoveringPosition < value) {
+		if(this.CoveringPosition > value) {
 			// going down
 			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.DECREASING);
 			this.emitter.sendCommand('Down');
@@ -129,7 +129,7 @@ class SomfyRtsWindowCoveringAccessory {
 		if(value === true) {
 			this.log.debug('Average time:' + this.config.timeToOpen);
 
-			this.CoveringTargetPosition = 1;
+			this.CoveringTargetPosition = 100;
 
 			this.CoveringMoving = true;
 			this.emitter.sendCommand('Up');
