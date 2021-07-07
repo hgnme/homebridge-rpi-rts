@@ -50,7 +50,7 @@ class SomfyRtsWindowCoveringAccessory {
 	// Gets whether or not the blind is moving
 	CoveringPositionStateGet() {
 		if(this.CoveringMoving) {
-			if(CoveringPosition < this.CoveringTargetPosition) {
+			if(this.CoveringPosition < this.CoveringTargetPosition) {
 				return Characteristic.PositionState.INCREASING;
 			} 
 			return Characteristic.PositionState.DECREASING;
@@ -136,9 +136,8 @@ class SomfyRtsWindowCoveringAccessory {
 				const covering = this.SomfyServices.windowCovering;
 				const targPos = this.CoveringTargetPosition;
 				this.log.debug('--> Opening characteristics');
-				this.log.debug(targPos);
 				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
-				covering.updateCharacteristic(Characteristic.CoveringTargetPosition, targPos);
+				covering.updateCharacteristic(Characteristic.TargetPosition, targPos);
 			}.bind(this),
 			500
 		);
