@@ -1,4 +1,4 @@
-# Homebridge-RPi-RTS
+# Homebridge-RPi-RTS - Fork: hgnme, enabling window covering treatment
 A [Homebridge](https://github.com/homebridge/homebridge) plugin to add HomeKit compatibility to Somfy RTS devices (rolling shutters, blinds, awnings, ...) requiring only a [Raspberry Pi](https://www.raspberrypi.org) and a simple 433 MHz transmitter.
 
 | Advantages | Limitations |
