@@ -15,7 +15,6 @@ module.exports = homebridge => {
  */
 class SomfyRtsWindowCoveringAccessory {
 	isSyncing = 0;
-
 	constructor(log, config) {
 		this.log = log;
 		if (!config || !config.name || !config.id) {
@@ -24,10 +23,12 @@ class SomfyRtsWindowCoveringAccessory {
 		this.config = config;
 
 		this.emitter = new RpiGpioRts(log, config);
-		
-		// I need to create a button called "sync"
-		// As well as a window covering.
 
+		this.hasSynced = false;
+		this.CoveringPosition = 0.5;
+		this.CoveringTargetPosition = 0;
+		this.CoveringMoving = false;
+		
 		this.SomfyServices = {
 			'syncButton': new Service.Switch(`${this.config.name} Synchronise State`),
 			'windowCovering': new Service.WindowCovering(`${this.config.name}`)
@@ -46,36 +47,69 @@ class SomfyRtsWindowCoveringAccessory {
 			.onSet(this.SyncroniseStateSet.bind(this));
 		this.log.debug(`Initialized accessory`);
 	}
-	CoveringPositionGet() {
-		this.log.debug('Triggered GET CurrentPosition');
-
-    // set this to a valid value for CurrentPosition
-    const currentValue = 1;
-
-    return currentValue;
-	}
+	// Gets whether or not the blind is moving
 	CoveringPositionStateGet() {
     this.log.debug('Triggered GET PositionState');
-
-    // set this to a valid value for PositionState
-    const currentValue = Characteristic.PositionState.DECREASING;
-
-    return currentValue;
+		if(this.CoveringMoving) {
+			return (this.CoveringPosition < this.CoveringTargetPosition ? Characteristic.PositionState.INCREASING : Characteristic.PositionState.DECREASING);
+		}
+		return Characteristic.PositionState.STOPPED;
   }
+	CoveringPositionGet() {
+		this.log.debug('Triggered GET CurrentPosition: ' + this.CoveringPosition);
+
+    // set this to a valid value for CurrentPosition
+    return this.CoveringPosition;
+	}
 	CoveringTargetPositionGet() {
-    this.log.debug('Triggered GET TargetPosition');
+    this.log.debug('Triggered GET TargetPosition: ' + this.CoveringTargetPosition);
 
-    // set this to a valid value for TargetPosition
-    const currentValue = 1;
-
-    return currentValue;
+    return this.CoveringTargetPosition;
   }
+	/* returns the time in ms to move the blind */
+	CalcOperationLength(targetPosition) {
+		let distanceToMove;
+		if(targetPosition < this.CoveringPosition) {
+			// current 70, target 50, move = 20
+			// 20 = 70 - 50
+			distanceToMove = this.CoveringPosition - targetPosition;
+		} else {
+			// 70 current, target 90, move = 20
+			// 20 = target - current
+			distanceToMove = targetPosition - this.CoveringPosition;
+		}
+		return (distanceToMove / 100) * this.config.timeToOpen;
+	}
+  /**
+	 * Sets the blind position
+	 */
+  CoveringTargetPositionSet(value) {
+    this.log.debug(`Triggered SET TargetPosition: targ${value} cur${this.CoveringPosition}`);
+		if(this.hasSynced === false) {
+			// syncronise
+		}
+		const distanceToMove = this.CalcOperationLength(value);
+		this.log.debug('distance to move (ms): ' + distanceToMove);
+		this.CoveringTargetPosition = value;
+		this.CoveringPosition = value;
+  }
+
+	SyncroniseStateGet() {
+    this.log.debug('Syncronise state requested' + this.isSyncing);
+    return this.isSyncing;
+	}
 	SyncroniseStateSet(value) {
     this.log.debug('Syncronise button set: ' + value);
 		if(value === true) {
 			this.log.debug('Average time:' + this.config.timeToOpen);
+			this.CoveringTargetPosition = 0;
+			this.CoveringMoving = true;
+			this.emitter.sendCommand('Up');
 			setTimeout(
 				function(button) {
+					this.hasSynced = true;
+					this.CoveringMoving = false;
+					this.CoveringPosition = this.CoveringTargetPosition;
 					this.isSyncing = false;
 					button.setCharacteristic(Characteristic.On, false);
 				}.bind(this, this.SomfyServices.syncButton), 
@@ -84,16 +118,6 @@ class SomfyRtsWindowCoveringAccessory {
 		}
 		this.isSyncing = value;
 	}
-	SyncroniseStateGet() {
-    this.log.debug('Syncronise state requested');
-    return this.isSyncing;
-	}
-  /**
-   * Handle requests to set the "Target Position" characteristic
-   */
-  CoveringTargetPositionSet(value) {
-    this.log.debug(`Triggered SET TargetPosition: ${value}`);
-  }
 	/**
 	 * Mandatory method for Homebridge
 	 * Return a list of services provided by this accessory
