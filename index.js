@@ -14,7 +14,7 @@ module.exports = homebridge => {
  * @class SomfyRtsWindowCoveringAccessory
  */
 class SomfyRtsWindowCoveringAccessory {
-
+	isSyncing = 0;
 
 	constructor(log, config) {
 		this.log = log;
@@ -29,7 +29,7 @@ class SomfyRtsWindowCoveringAccessory {
 		// As well as a window covering.
 
 		this.SomfyServices = {
-			// 'syncButton': new Service.Switch(`${this.config.name} Synchronise`),
+			'syncButton': new Service.Switch(`${this.config.name} Synchronise State`),
 			'windowCovering': new Service.WindowCovering(`${this.config.name}`)
 		}
 
@@ -41,6 +41,9 @@ class SomfyRtsWindowCoveringAccessory {
 			.onGet(this.CoveringTargetPositionGet.bind(this))
 			.onSet(this.CoveringTargetPositionSet.bind(this));
 		
+		this.SomfyServices.syncButton.getCharacteristic(Characteristic.On)
+			.onSet(this.SyncroniseStateGet.bind(this))
+			.onGet(this.SyncroniseStateSet.bind(this));
 		this.log.debug(`Initialized accessory`);
 	}
 	CoveringPositionGet() {
@@ -67,7 +70,20 @@ class SomfyRtsWindowCoveringAccessory {
 
     return currentValue;
   }
-
+	SyncroniseStateSet(value) {
+    this.log.debug('Syncronise triggered: ' + value);
+    this.log.debug('Average time:' + this.config.timeToOpen);
+		setTimeout(function() {
+			this.setCharacteristic(Chacteristic.On, false);
+		}.bind(this), this.config.timeToOpen);
+		this.isSyncing = value;
+		
+	}
+	SyncroniseStateGet() {
+    this.log.debug('Syncronise state requested');
+    return this.isSyncing;
+		
+	}
   /**
    * Handle requests to set the "Target Position" characteristic
    */
