@@ -2,8 +2,6 @@
 import { readFileSync, writeFile } from 'fs';
 import { Gpio, waveClear, waveAddGeneric, waveCreate, waveTxSend, WAVE_MODE_ONE_SHOT, waveTxBusy, waveDelete } from 'pigpio';
 // The Raspberry Pi's GPIO pin number linked to the 'data' pin of the RF emitter		
-const outPin = 4;
-const output = new Gpio(outPin, {mode: Gpio.OUTPUT});
 
 /**
  * Class using Raspberry Pi GPIO to send waveform data
@@ -16,7 +14,8 @@ const output = new Gpio(outPin, {mode: Gpio.OUTPUT});
  * @class RpiGpioRts
  */
 class RpiGpioRts {
-
+	outPin = 4;
+	output;
 	/**
 	 * Constructor of the class RpiGpioRts
 	 *
@@ -31,7 +30,7 @@ class RpiGpioRts {
 		}
 		this.id = parseInt(config.id);
 		this.retrieveRollingCode();
-		
+		this.output = new Gpio(this.outPin, {mode: Gpio.OUTPUT});
 		this.buttons = {
 			My: 0x1,
 			Up: 0x2,
@@ -128,8 +127,8 @@ class RpiGpioRts {
 		let wf = [];
 		
 		// Wake up pulse + silence
-		wf.push({ gpioOn: outPin, gpioOff: 0, usDelay: 9415 });
-		wf.push({ gpioOn: 0, gpioOff: outPin, usDelay: 89565 });
+		wf.push({ gpioOn: this.outPin, gpioOff: 0, usDelay: 9415 });
+		wf.push({ gpioOn: 0, gpioOff: this.outPin, usDelay: 89565 });
 		
 		// Repeating frames
 		for (let j = 0; j < repetitions; j++) {
@@ -137,27 +136,27 @@ class RpiGpioRts {
 			// Hardware synchronization
 			let loops = j === 0 ? 2 : 7;
 			for (let i = 0; i < loops; i++) {
-				wf.push({ gpioOn: outPin, gpioOff: 0, usDelay: 2560 });
-				wf.push({ gpioOn: 0, gpioOff: outPin, usDelay: 2560 });
+				wf.push({ gpioOn: this.outPin, gpioOff: 0, usDelay: 2560 });
+				wf.push({ gpioOn: 0, gpioOff: this.outPin, usDelay: 2560 });
 			}
 		
 			// Software synchronization
-			wf.push({ gpioOn: outPin, gpioOff: 0, usDelay: 4550 });
-			wf.push({ gpioOn: 0, gpioOff: outPin, usDelay: 640 });
+			wf.push({ gpioOn: this.outPin, gpioOff: 0, usDelay: 4550 });
+			wf.push({ gpioOn: 0, gpioOff: this.outPin, usDelay: 640 });
 		
 			// Manchester enconding of payload data
 			for (let i = 0; i < 56; i++) {
 				if ((payloadData[parseInt(i / 8)] >> (7 - (i % 8))) & 1) {
-					wf.push({ gpioOn: 0, gpioOff: outPin, usDelay: 640 });
-					wf.push({ gpioOn: outPin, gpioOff: 0, usDelay: 640 });
+					wf.push({ gpioOn: 0, gpioOff: this.outPin, usDelay: 640 });
+					wf.push({ gpioOn: this.outPin, gpioOff: 0, usDelay: 640 });
 				} else {
-					wf.push({ gpioOn: outPin, gpioOff: 0, usDelay: 640 });
-					wf.push({ gpioOn: 0, gpioOff: outPin, usDelay: 640 });
+					wf.push({ gpioOn: this.outPin, gpioOff: 0, usDelay: 640 });
+					wf.push({ gpioOn: 0, gpioOff: this.outPin, usDelay: 640 });
 				}
 			}
 		
 			// Interframe gap
-			wf.push({ gpioOn: 0, gpioOff: outPin, usDelay: 30415 });
+			wf.push({ gpioOn: 0, gpioOff: this.outPin, usDelay: 30415 });
 		
 		}
 		
@@ -180,7 +179,7 @@ class RpiGpioRts {
 		const waveform = this.getWaveform(payloadData, 4);
 		
 		// Sending waveform
-		output.digitalWrite(0);
+		this.output.digitalWrite(0);
 		waveClear();
 		waveAddGeneric(waveform);
 		let waveId = waveCreate();
