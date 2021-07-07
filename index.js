@@ -25,8 +25,8 @@ class SomfyRtsWindowCoveringAccessory {
 		this.emitter = new RpiGpioRts(log, config);
 
 		this.hasSynced = false;
-		this.CoveringPosition = 0.5;
-		this.CoveringTargetPosition = 0;
+		this.CoveringPosition = 1;
+		this.CoveringTargetPosition = 1;
 		this.CoveringMoving = false;
 		
 		this.SomfyServices = {
@@ -49,10 +49,15 @@ class SomfyRtsWindowCoveringAccessory {
 	}
 	// Gets whether or not the blind is moving
 	CoveringPositionStateGet() {
-    this.log.debug('Triggered GET PositionState');
 		if(this.CoveringMoving) {
-			return (this.CoveringPosition < this.CoveringTargetPosition ? Characteristic.PositionState.INCREASING : Characteristic.PositionState.DECREASING);
+			if(CoveringPosition < this.CoveringTargetPosition) {
+				this.log.debug('Triggered GET PositionState: increasing');
+				return Characteristic.PositionState.INCREASING;
+			} 
+			this.log.debug('Triggered GET PositionState: decreasing');
+			return Characteristic.PositionState.DECREASING;
 		}
+    this.log.debug('Triggered GET PositionState: stopped');
 		return Characteristic.PositionState.STOPPED;
   }
 	CoveringPositionGet() {
@@ -91,6 +96,7 @@ class SomfyRtsWindowCoveringAccessory {
 		const distanceToMove = this.CalcOperationLength(value);
 		this.log.debug('distance to move (ms): ' + distanceToMove);
 		this.CoveringTargetPosition = value;
+		const covering = this.SomfyServices.windowCovering;
 		covering.updateCharacteristic(Characteristic.TargetPosition, this.CoveringTargetPosition);
 		if(this.CoveringPosition < value) {
 			// going down
@@ -103,6 +109,7 @@ class SomfyRtsWindowCoveringAccessory {
 		}
 		setTimeout(
 			function() {
+				const covering = this.SomfyServices.windowCovering;
 				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
 				this.emitter.sendCommand('My');
 				this.log.debug('move complete');
@@ -114,11 +121,11 @@ class SomfyRtsWindowCoveringAccessory {
   }
 
 	SyncroniseStateGet() {
-    this.log.debug('Syncronise state requested' + this.isSyncing);
+    this.log.debug('Syncronise btn get' + this.isSyncing);
     return this.isSyncing;
 	}
 	SyncroniseStateSet(value) {
-    this.log.debug('Syncronise button set: ' + value);
+    this.log.debug('Syncronise btn set: ' + value);
 		if(value === true) {
 			this.log.debug('Average time:' + this.config.timeToOpen);
 
