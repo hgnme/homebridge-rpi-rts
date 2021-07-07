@@ -25,8 +25,8 @@ class SomfyRtsWindowCoveringAccessory {
 		this.emitter = new RpiGpioRts(log, config);
 
 		this.hasSynced = false;
-		this.CoveringPosition = 100;
-		this.CoveringTargetPosition = 100;
+		this.CoveringPosition = 50;
+		this.CoveringTargetPosition = 50;
 		this.CoveringMoving = false;
 		
 		this.SomfyServices = {
@@ -99,7 +99,7 @@ class SomfyRtsWindowCoveringAccessory {
 		// Press the button
 		this.log.debug(`--> Triggering button press`);
 		this.emitter.sendCommand(direction);
-
+		this.CoveringMoving = true;
 		// Set timeout of (timeToMove) ms and press My button when at destination
 		setTimeout(
 			function() {
@@ -110,6 +110,7 @@ class SomfyRtsWindowCoveringAccessory {
 				const covering = this.SomfyServices.windowCovering;
 				covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
 				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);		
+				this.CoveringMoving = false;
 				this.log.debug(`--> Move complete`);
 			}.bind(this), 
 			timeToMove
@@ -122,7 +123,7 @@ class SomfyRtsWindowCoveringAccessory {
 		
 		this.log.debug('--> Pressing Up button');
 		this.emitter.sendCommand('Up');
-		
+		this.CoveringMoving = true;
 		const covering = this.SomfyServices.windowCovering;
 		// Set blind to 0% and stopped to begin
 		
@@ -158,6 +159,7 @@ class SomfyRtsWindowCoveringAccessory {
 				const covering = this.SomfyServices.windowCovering;
 				covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
 				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
+				this.CoveringMoving = false;
 				this.log.debug(`--> Sync complete`);
 			}.bind(this), 
 			this.config.timeToOpen
