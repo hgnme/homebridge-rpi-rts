@@ -171,12 +171,16 @@ class SomfyRtsWindowCoveringAccessory {
     this.log.debug(`Requested to move blind to ${value}% from ${this.CoveringPosition}%`);
 		// syncronise
 		if(this.isSyncing) {
-			this.log.debug('Currently Syncing, nothing to do');
+			this.log.debug('--> Currently Syncing, nothing to do');
 			return false;
 		}
 		if(this.hasSynced === false) {
-			this.log.debug('No sync performed yet, nothing to do');
+			this.log.debug('--> No sync performed yet, nothing to do');
 			this.SomfyServices.syncButton.setCharacteristic(Characteristic.On, true);
+			return;
+		}
+		if(this.CoveringMoving) {
+			this.log.debug('--> Cover already moving');
 			return;
 		}
 		
