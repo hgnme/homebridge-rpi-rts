@@ -1,6 +1,7 @@
 // Requires https://github.com/joan2937/pigpio installed on the Raspberry Pi
-import { readFileSync, writeFile } from 'fs';
-import { Gpio, waveClear, waveAddGeneric, waveCreate, waveTxSend, WAVE_MODE_ONE_SHOT, waveTxBusy, waveDelete } from 'pigpio';
+const fs = require('fs');
+const pigpio = require('pigpio');
+
 // The Raspberry Pi's GPIO pin number linked to the 'data' pin of the RF emitter		
 
 /**
@@ -30,7 +31,7 @@ class RpiGpioRts {
 		}
 		this.id = parseInt(config.id);
 		this.retrieveRollingCode();
-		this.output = new Gpio(this.outPin, {mode: Gpio.OUTPUT});
+		this.output = new pigpio.Gpio(this.outPin, {mode: pigpio.Gpio.OUTPUT});
 		this.buttons = {
 			My: 0x1,
 			Up: 0x2,
@@ -46,7 +47,7 @@ class RpiGpioRts {
 	*/
 	retrieveRollingCode() {
 		try {
-			const code = readFileSync(`./${this.id}.txt`);
+			const code = fs.readFileSync(`./${this.id}.txt`);
 			if (isNaN(parseInt(code))) {
 				this.rollingCode = 1;
 				this.log.debug(`No valid rolling code in file ./${this.id}.txt, set rolling code to 1`);
@@ -71,7 +72,7 @@ class RpiGpioRts {
 	 * @method saveRollingCode
 	*/
 	saveRollingCode() {
-		writeFile(`./${this.id}.txt`, this.rollingCode.toString(), (err) => {
+		fs.writeFile(`./${this.id}.txt`, this.rollingCode.toString(), (err) => {
 			if (err) throw err;
 		});
 		this.log.debug(`Saved rolling code ${this.rollingCode} in file ./${this.id}.txt`);
@@ -180,14 +181,14 @@ class RpiGpioRts {
 		
 		// Sending waveform
 		this.output.digitalWrite(0);
-		waveClear();
-		waveAddGeneric(waveform);
-		let waveId = waveCreate();
+		pigpio.waveClear();
+		pigpio.waveAddGeneric(waveform);
+		let waveId = pigpio.waveCreate();
 		if (waveId >= 0) {
-			waveTxSend(waveId, WAVE_MODE_ONE_SHOT);
+			pigpio.waveTxSend(waveId, pigpio.WAVE_MODE_ONE_SHOT);
 		}
-		while (waveTxBusy()) {}
-		waveDelete(waveId);
+		while (pigpio.waveTxBusy()) {}
+		pigpio.waveDelete(waveId);
 		
 		// Incrementing rolling code and storing its value for next time
 		this.rollingCode++;

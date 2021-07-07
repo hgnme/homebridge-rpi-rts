@@ -1,4 +1,4 @@
-import RpiGpioRts from './RpiGpioRts';
+const RpiGpioRts = require('./RpiGpioRts');
 // let Service, Characteristic;
 
 export default homebridge => {
