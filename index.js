@@ -42,8 +42,8 @@ class SomfyRtsWindowCoveringAccessory {
 			.onSet(this.CoveringTargetPositionSet.bind(this));
 		
 		this.SomfyServices.syncButton.getCharacteristic(Characteristic.On)
-			.onSet(this.SyncroniseStateGet.bind(this))
-			.onGet(this.SyncroniseStateSet.bind(this));
+			.onGet(this.SyncroniseStateGet.bind(this))
+			.onSet(this.SyncroniseStateSet.bind(this));
 		this.log.debug(`Initialized accessory`);
 	}
 	CoveringPositionGet() {
@@ -74,7 +74,7 @@ class SomfyRtsWindowCoveringAccessory {
     this.log.debug('Syncronise triggered: ' + value);
     this.log.debug('Average time:' + this.config.timeToOpen);
 		setTimeout(function() {
-			this.setCharacteristic(Chacteristic.On, false);
+			this.setCharacteristic(Characteristic.On, false);
 		}.bind(this), this.config.timeToOpen);
 		this.isSyncing = value;
 		
