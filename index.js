@@ -51,24 +51,16 @@ class SomfyRtsWindowCoveringAccessory {
 	CoveringPositionStateGet() {
 		if(this.CoveringMoving) {
 			if(CoveringPosition < this.CoveringTargetPosition) {
-				this.log.debug('Triggered GET PositionState: increasing');
 				return Characteristic.PositionState.INCREASING;
 			} 
-			this.log.debug('Triggered GET PositionState: decreasing');
 			return Characteristic.PositionState.DECREASING;
 		}
-    this.log.debug('Triggered GET PositionState: stopped');
 		return Characteristic.PositionState.STOPPED;
   }
 	CoveringPositionGet() {
-		this.log.debug('Triggered GET CurrentPosition: ' + this.CoveringPosition);
-
-    // set this to a valid value for CurrentPosition
     return this.CoveringPosition;
 	}
 	CoveringTargetPositionGet() {
-    this.log.debug('Triggered GET TargetPosition: ' + this.CoveringTargetPosition);
-
     return this.CoveringTargetPosition;
   }
 	/* returns the time in ms to move the blind */
@@ -86,77 +78,103 @@ class SomfyRtsWindowCoveringAccessory {
 			return (distanceToMove / 100) * this.config.timeToClose;
 		}
 	}
+
+	moveCovering() {
+		const positionCurrent = this.CoveringPosition;
+		const positionTarget = this.CoveringTargetPosition;
+		const covering = this.SomfyServices.windowCovering;
+		const direction = this.CoveringPosition > value ? 'Down' : 'Up';
+
+		const timeToMove = this.CalcOperationLength(positionTarget);
+
+		this.log.debug(`Moving covering (${direction}) for ${timeToMove}ms`);
+		// Set target position 
+		covering.updateCharacteristic(Characteristic.TargetPosition, positionTarget);
+		// Set covering characteristic
+		covering.updateCharacteristic(
+			Characteristic.PositionState, 
+			direction === 'Down' ? Characteristic.PositionState.DECREASING : Characteristic.PositionState.INCREASING
+		);
+
+		// Press the button
+		this.log.debug(`--> Triggering button press`);
+		this.emitter.sendCommand(direction);
+
+		// Set timeout of (timeToMove) ms and press My button when at destination
+		setTimeout(
+			function() {
+				this.log.debug(`--> Arrived at destination`);
+				this.log.debug(`--> Presing My`);
+				this.emitter.sendCommand('My');
+				this.CoveringPosition = value;
+				const covering = this.SomfyServices.windowCovering;
+				covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
+				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);		
+				this.log.debug(`--> Move complete`);
+			}.bind(this), 
+			timeToMove
+		);
+	}
+	syncroniseCovering() {
+		this.isSyncing = true;
+		this.CoveringTargetPosition = 100;
+		this.CoveringMoving = true;
+		
+		this.log.debug('--> Pressing Up button');
+		this.emitter.sendCommand('Up');
+		
+		const covering = this.SomfyServices.windowCovering;
+		covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
+
+		this.log.debug(`--> Waiting ${this.config.timeToOpen} ms`);
+		setTimeout(
+			function() {
+				this.log.debug(`--> Arrived at top`);
+				this.hasSynced = true;
+				this.CoveringMoving = false;
+				this.CoveringPosition = this.CoveringTargetPosition;
+				this.isSyncing = false;
+
+				this.log.debug(`--> Turning off Sync button`);
+				this.SomfyServices.syncButton.setCharacteristic(Characteristic.On, false);
+
+				this.log.debug(`--> Updating windowCovering status`);
+				const covering = this.SomfyServices.windowCovering;
+				covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
+				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
+				this.log.debug(`--> Sync complete`);
+			}.bind(this), 
+			this.config.timeToOpen
+		);
+	}
   /**
 	 * Sets the blind position
 	 */
   CoveringTargetPositionSet(value) {
-    this.log.debug(`Triggered SET TargetPosition: targ${value} cur${this.CoveringPosition}`);
+    this.log.debug(`Requested to move blind to ${value}% from ${this.CoveringPosition}%`);
+		// syncronise
+		if(this.isSyncing) {
+			this.log.debug('Currently Syncing, nothing to do');
+			return false;
+		}
 		if(this.hasSynced === false) {
-			// syncronise
-			if(this.isSyncing) {
-				this.log.debug('already syncing');
-				return false;
-			}
-			this.log.debug('triggering sync');
+			this.log.debug('No sync performed yet, nothing to do');
 			this.SomfyServices.syncButton.setCharacteristic(Characteristic.On, true);
 			return;
 		}
-		const distanceToMove = this.CalcOperationLength(value);
-		this.log.debug('distance to move (ms): ' + distanceToMove);
+		
+		// Call moveCovering function
 		this.CoveringTargetPosition = value;
-		const covering = this.SomfyServices.windowCovering;
-		covering.updateCharacteristic(Characteristic.TargetPosition, this.CoveringTargetPosition);
-		if(this.CoveringPosition > value) {
-			// going down
-			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.DECREASING);
-			this.emitter.sendCommand('Down');
-		} else {
-			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
-			this.emitter.sendCommand('Up');
-
-		}
-		setTimeout(
-			function() {
-				const covering = this.SomfyServices.windowCovering;
-				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
-				this.emitter.sendCommand('My');
-				this.log.debug('move complete');
-				this.CoveringPosition = value;
-				covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);				
-			}.bind(this), 
-			distanceToMove
-		);
+		moveCovering();
   }
 
 	SyncroniseStateGet() {
-    this.log.debug('Syncronise btn get' + this.isSyncing);
     return this.isSyncing;
 	}
 	SyncroniseStateSet(value) {
-    this.log.debug('Syncronise btn set: ' + value);
 		if(value === true) {
-			this.log.debug('Beginning syncronise process');
-			this.CoveringTargetPosition = 100;
-
-			this.CoveringMoving = true;
-			this.emitter.sendCommand('Up');
-			const covering = this.SomfyServices.windowCovering;
-			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
-			setTimeout(
-				function() {
-					this.hasSynced = true;
-					this.CoveringMoving = false;
-					this.CoveringPosition = this.CoveringTargetPosition;
-					this.isSyncing = false;
-
-					this.SomfyServices.syncButton.setCharacteristic(Characteristic.On, false);
-
-					const covering = this.SomfyServices.windowCovering;
-					covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
-					covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
-				}.bind(this), 
-				this.config.timeToOpen
-			);
+			this.log.debug('Beginning syncronise process. Moving to full open');
+			syncroniseCovering();
 		}
 		this.isSyncing = value;
 	}
