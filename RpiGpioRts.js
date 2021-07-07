@@ -196,4 +196,4 @@ class RpiGpioRts {
 	}
 }
 
-export default RpiGpioRts;
+module.exports = RpiGpioRts;

@@ -1,7 +1,7 @@
 const RpiGpioRts = require('./RpiGpioRts');
 // let Service, Characteristic;
 
-export default homebridge => {
+modeule.exports = homebridge => {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 	homebridge.registerAccessory('homebridge-rpi-rts-windowcovering', 'Somfy RTS Remote Window Covering', SomfyRtsWindowCoveringAccessory);
