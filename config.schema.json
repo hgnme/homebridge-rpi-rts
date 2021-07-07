@@ -1,5 +1,5 @@
 {
-	"pluginAlias": "Somfy RTS Remote",
+	"pluginAlias": "Somfy RTS Window Covering",
 	"pluginType": "accessory",
 	"singular": false,
 	"schema": {
@@ -21,11 +21,14 @@
 				"minimum": 0,
 				"maximum": 16777216
 			},
-			"prog": {
-				"title": "Show Prog Button",
-				"description": "Disable after the pairing phase to hide the Prog button",
-				"type": "boolean",
-				"default": true
+			"timeToOpen": {
+				"title": "Average time to open",
+				"description": "Average time to open/close the covering, fully (in ms)",
+				"type": "integer",
+				"default": 1000,
+				"required": true,
+				"minimum": 0,
+				"maximum": 60000
 			}
 		}
 	}

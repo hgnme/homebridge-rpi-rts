@@ -1,106 +1,91 @@
-const RpiGpioRts = require('./RpiGpioRts');
-let Service, Characteristic;
+const RpiGpioRts = require('./RpiGpioRts').default;
+// let Service, Characteristic;
+import {
+  AccessoryPlugin,
+  CharacteristicGetCallback,
+  CharacteristicSetCallback,
+  CharacteristicValue,
+	Characteristic,
+  HAP,
+  Logging,
+  Service,
+  CharacteristicEventTypes,
+  AccessoryConfig
+} from "homebridge";
 
 module.exports = homebridge => {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
-	homebridge.registerAccessory('homebridge-rpi-rts', 'Somfy RTS Remote', SomfyRtsRemoteAccessory);
+	homebridge.registerAccessory('homebridge-rpi-rts-windowcovering', 'Somfy RTS Remote Window Covering', SomfyRtsWindowCoveringAccessory);
 };
 
 /**
  * Class simulating a Somfy RTS Remote Accessory for Homebridge
  * with 4 'stateless' switches: Up, Down, My, Prog
  *
- * @class SomfyRtsRemoteAccessory
+ * @class SomfyRtsWindowCoveringAccessory
  */
-class SomfyRtsRemoteAccessory {
+class SomfyRtsWindowCoveringAccessory {
 
-	/**
-	 * Constructor of the class SomfyRtsRemoteAccessory
-	 *
-	 * @constructor
-	 * @param {Object} log - The Homebridge log
-	 * @param {Object} config - The Homebridge config data filtered for this item
-	*/
+
 	constructor(log, config) {
 		this.log = log;
 		if (!config || !config.name || !config.id) {
 			throw new Error(`Invalid or missing configuration.`);
 		}
 		this.config = config;
+
 		this.emitter = new RpiGpioRts(log, config);
 		
-		// Delay to reset the switch after being pressed
-		this.delay = 500;
-		
-		this.buttons = ['Up', 'Down', 'My'];
-		if (this.config.prog === true) this.buttons.push('Prog');
-		
-		// Create an object such as {'Up': false, 'Down': false, ...}
-		this.states = this.buttons.reduce((acc, cur) => {
-			acc[cur] = false;
-			return acc;
-		}, {});
-		
-		this.switchServices = {};
-		
-		this.buttons.forEach(button => {
-		
-			this.switchServices[button] = new Service.Switch(`${this.config.name} ${button}`, button);
-			
-			this.switchServices[button]
-				.getCharacteristic(Characteristic.On)
-				.on('get', this.getOn.bind(this, button))
-				.on('set', this.setOn.bind(this, button));
-		});
+		// I need to create a button called "sync"
+		// As well as a window covering.
+
+		this.SomfyServices = {
+			// 'syncButton': new Service.Switch(`${this.config.name} Synchronise`),
+			'windowCovering': new Service.windowCovering(`${this.config.name}`)
+		}
+
+		this.SomfyServices.windowCovering.getCharacteristic(Characteristic.CurrentPosition)
+			.onGet(this.CoveringPositionGet().bind(this));
+		this.SomfyServices.windowCovering.getCharacteristic(Characteristic.PositionState)
+			.onGet(this.CoveringPositionStateGet().bind(this));
+		this.SomfyServices.windowCovering.getCharacteristic(Characteristic.TargetPosition)
+			.onGet(this.CoveringTargetPositionGet().bind(this))
+			.onSet(this.CoveringTargetPositionSet().bind(this));
 		
 		this.log.debug(`Initialized accessory`);
 	}
-	
-	/**
-	 * Getter for the 'On' characteristic of the 'Switch' service
-	 *
-	 * @method getOn
-	 * @param {Function} callback - A callback function from Homebridge
-	 * @param {String} button - 'Up', 'Down', 'My', 'Prog'
-	*/
-	getOn(button, callback) {
-		this.log.debug(`Function getOn called for button ${button}`);
-		const value = this.states[button];
-		callback(null, value);
+	CoveringPositionGet() {
+		this.log.debug('Triggered GET CurrentPosition');
+
+    // set this to a valid value for CurrentPosition
+    const currentValue = 1;
+
+    return currentValue;
 	}
-	
-	/**
-	 * Setter for the 'On' characteristic of the 'Switch' service
-	 *
-	 * @method setOn
-	 * @param {Object} value - The value for the characteristic
-	 * @param {Function} callback - A callback function from Homebridge
-	 * @param {String} button - 'Up', 'Down', 'My', 'Prog'
-	*/
-	setOn(button, value, callback) {
-		this.log.debug(`Function setOn called for button ${button} with value ${value}`);
-		this.states[button] = value;
-		if (value === true) {
-			this.emitter.sendCommand(button);
-			this.resetSwitchWithTimeout(button);
-		}
-		callback(null);
-	}
-	
-	/**
-	 * Reset the switch to false to simulate a stateless behavior
-	 *
-	 * @method resetSwitchWithTimeout
-	 * @param {String} button - 'Up', 'Down', 'My', 'Prog'
-	*/
-	resetSwitchWithTimeout(button) {
-		this.log.debug(`Function resetSwitchWithTimeout called for button ${button}`);
-		setTimeout(function() {
-			this.switchServices[button].setCharacteristic(Characteristic.On, false);
-		}.bind(this), this.delay);
-	}
-	
+	CoveringPositionStateGet() {
+    this.log.debug('Triggered GET PositionState');
+
+    // set this to a valid value for PositionState
+    const currentValue = Characteristic.PositionState.DECREASING;
+
+    return currentValue;
+  }
+	CoveringTargetPositionGet() {
+    this.log.debug('Triggered GET TargetPosition');
+
+    // set this to a valid value for TargetPosition
+    const currentValue = 1;
+
+    return currentValue;
+  }
+
+  /**
+   * Handle requests to set the "Target Position" characteristic
+   */
+  CoveringTargetPositionSet(value) {
+    this.log.debug(`Triggered SET TargetPosition: ${value}`);
+  }
 	/**
 	 * Mandatory method for Homebridge
 	 * Return a list of services provided by this accessory
@@ -110,6 +95,6 @@ class SomfyRtsRemoteAccessory {
 	*/
 	getServices() {
 		this.log.debug(`Function getServices called`);
-		return Object.values(this.switchServices);
+		return Object.values(this.SomfyServices);
 	}
 }
