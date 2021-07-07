@@ -34,12 +34,12 @@ class SomfyRtsWindowCoveringAccessory {
 		}
 
 		this.SomfyServices.windowCovering.getCharacteristic(Characteristic.CurrentPosition)
-			.onGet(this.CoveringPositionGet().bind(this));
+			.onGet(this.CoveringPositionGet.bind(this));
 		this.SomfyServices.windowCovering.getCharacteristic(Characteristic.PositionState)
-			.onGet(this.CoveringPositionStateGet().bind(this));
+			.onGet(this.CoveringPositionStateGet.bind(this));
 		this.SomfyServices.windowCovering.getCharacteristic(Characteristic.TargetPosition)
-			.onGet(this.CoveringTargetPositionGet().bind(this))
-			.onSet(this.CoveringTargetPositionSet().bind(this));
+			.onGet(this.CoveringTargetPositionGet.bind(this))
+			.onSet(this.CoveringTargetPositionSet.bind(this));
 		
 		this.log.debug(`Initialized accessory`);
 	}
