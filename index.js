@@ -92,6 +92,13 @@ class SomfyRtsWindowCoveringAccessory {
     this.log.debug(`Triggered SET TargetPosition: targ${value} cur${this.CoveringPosition}`);
 		if(this.hasSynced === false) {
 			// syncronise
+			if(this.isSyncing) {
+				this.log.debug('already syncing');
+				return false;
+			}
+			this.log.debug('triggering sync');
+			this.SomfyServices.syncButton.setCharacteristic(Characteristic.On, true);
+			return;
 		}
 		const distanceToMove = this.CalcOperationLength(value);
 		this.log.debug('distance to move (ms): ' + distanceToMove);
@@ -146,7 +153,7 @@ class SomfyRtsWindowCoveringAccessory {
 
 					const covering = this.SomfyServices.windowCovering;
 					covering.updateCharacteristic(Characteristic.CurrentPosition, this.CoveringPosition);
-					covering.updateCharacteristic(Characteristic.PositionState.STOPPED);
+					covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
 				}.bind(this), 
 				this.config.timeToOpen
 			);
