@@ -30,7 +30,7 @@ class SomfyRtsWindowCoveringAccessory {
 
 		this.SomfyServices = {
 			// 'syncButton': new Service.Switch(`${this.config.name} Synchronise`),
-			'windowCovering': new Service.windowCovering(`${this.config.name}`)
+			'windowCovering': new Service.WindowCovering(`${this.config.name}`)
 		}
 
 		this.SomfyServices.windowCovering.getCharacteristic(Characteristic.CurrentPosition)
