@@ -133,6 +133,7 @@ class SomfyRtsWindowCoveringAccessory {
 
 			this.CoveringMoving = true;
 			this.emitter.sendCommand('Up');
+			const covering = this.SomfyServices.windowCovering;
 			covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
 			setTimeout(
 				function() {
