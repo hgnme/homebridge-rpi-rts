@@ -125,14 +125,19 @@ class SomfyRtsWindowCoveringAccessory {
 		
 		const covering = this.SomfyServices.windowCovering;
 		// Set blind to 0% and stopped to begin
+		
+		this.log.debug('--> Closing characteristics');
 		covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.STOPPED);
 		covering.updateCharacteristic(Characteristic.CurrentPosition, 0);
 		setTimeout(
 			// Set blind to rising, 100% target 500ms later
 			function() {
 				const covering = this.SomfyServices.windowCovering;
+				const targPos = this.CoveringTargetPosition;
+				this.log.debug('--> Opening characteristics');
+				this.log.debug(targPos);
 				covering.updateCharacteristic(Characteristic.PositionState, Characteristic.PositionState.INCREASING);
-				covering.updateCharacteristic(Characteristic.CoveringTargetPosition, this.CoveringTargetPosition);
+				covering.updateCharacteristic(Characteristic.CoveringTargetPosition, targPos);
 			}.bind(this),
 			500
 		);
